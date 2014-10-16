@@ -43,16 +43,61 @@ def naive_counter(a, b, x):
     return result
 
 
-# start, end, points = prepare_data()
-# print(' '.join([str(x) for x in naive_counter(start, end, points)]))
+def find_start_idx(arr, x):
+    j = l = 0
+    r = len(arr)
+    for i in range(l, r):
+        if arr[i] <= x:
+            j += 1
+        else:
+            break
+    return j
 
 
-import random
-points = [i for i in range(1, 100)]
-random.shuffle(points)
-print(points)
-qsort(points, 0, len(points))
-print(points)
+def find_end_idx(arr, x):
+    j = l = 0
+    r = len(arr)
+    for i in range(l, r):
+        if arr[i] < x:
+            j += 1
+        else:
+            break
+    return j
+
+
+def partition_based_counter(a, b, x):
+    result = [0] * len(x)
+    checked = []
+    len_a = len(a)
+    len_b = len(b)
+    qsort(a, 0, len_a)
+    qsort(b, 0, len_b)
+    for i in range(0, len(x)):
+        if x[i] < a[0]:
+            break
+        if x[i] > b[len_b - 1]:
+            break
+        if x[i] in checked:
+            result[i] = result[checked.index(x[i])]
+        else:
+            start_idx = find_start_idx(a, x[i])
+            end_idx = find_end_idx(b, x[i])
+            result[i] = start_idx - end_idx
+        checked.append(x[i])
+    return result
+
+
+start, end, points = prepare_data()
+print(' '.join([str(x) for x in naive_counter(start, end, points)]))
+print(' '.join([str(x) for x in partition_based_counter(start, end, points)]))
+
+
+# import random
+# points = [i for i in range(1, 100)]
+# random.shuffle(points)
+# print(points)
+# qsort(points, 0, len(points))
+# print(points)
 
 #import random
 #values = [i for i in range(1, 100)]
