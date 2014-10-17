@@ -1,5 +1,6 @@
 import random
 import bisect
+import math
 
 
 def prepare_data():
@@ -28,10 +29,15 @@ def partition(a, l, r):
     return j
 
 
-def qsort(a, l, r):
+def qsort(a, l, r, max_depth, depth=0):
+    if depth >= max_depth:
+        a = sorted(a)
+        return
+    depth += 1
     while l < r - 1:
         m = partition(a, l, r)
-        qsort(a, l, m)
+        qsort(a, l, m, max_depth, depth)
+        depth -= 1
         l = m + 1
 
 
@@ -56,14 +62,15 @@ def find_idx(arr, x):
 
 
 def qsort_based_counter(a, b, x):
-    result = [0] * len(x)
+    len_x = len(x)
+    result = [0] * len_x
     checked = {}
     len_a = len(a)
     len_b = len(b)
     if not len_a:
         return result
-    qsort(a, 0, len_a)
-    qsort(b, 0, len_b)
+    qsort(a, 0, len_a, math.floor(math.log2(len_a)))
+    qsort(b, 0, len_b, math.floor(math.log2(len_b)))
     # a = sorted(a)
     # b = sorted(b)
     for i in range(0, len(x)):
