@@ -1,23 +1,26 @@
 import random
+import bisect
 
 
 def prepare_data():
     n, m = (int(x) for x in input().split())
-    _segments = []
+    _start = []
+    _end = []
     for i in range(0, n):
         a, b = (int(x) for x in input().split())
-        _segments.append((a, b))
+        _start.append(a)
+        _end.append(b)
     _points = [int(x) for x in input().split()]
-    return _segments, _points
+    return _start, _end, _points
 
 
 def partition(a, l, r):
     base_key = random.randint(l, r-1)
     a[l], a[base_key] = a[base_key], a[l]
-    x = a[l][0]
+    x = a[l]
     j = l
     for i in range(l+1, r):
-        if a[i][0] < x:
+        if a[i] < x:
             j += 1
             if i != j:
                 a[i], a[j] = a[j], a[i]
@@ -32,11 +35,11 @@ def qsort(a, l, r):
         l = m + 1
 
 
-def naive_counter(a, x):
+def naive_counter(a, b, x):
     result = [0] * len(x)
     for i in range(0, len(x)):
         for j in range(0, len(a)):
-            if a[j][0] <= x[i] <= a[j][1]:
+            if a[j] <= x[i] <= b[j]:
                 result[i] += 1
     return result
 
@@ -52,42 +55,40 @@ def find_idx(arr, x):
     return j
 
 
-def qsort_based_counter(a, x):
+def qsort_based_counter(a, b, x):
     result = [0] * len(x)
     checked = {}
     len_a = len(a)
+    len_b = len(b)
     if not len_a:
         return result
     qsort(a, 0, len_a)
-    # a = sorted(a, key=lambda segment: segment[0])
+    qsort(b, 0, len_b)
+    # a = sorted(a)
+    # b = sorted(b)
     for i in range(0, len(x)):
-        if x[i] < a[0][0]:
+        if x[i] < a[0]:
             continue
         if x[i] in checked:
             result[i] = result[checked[x[i]]]
         else:
-            for j in range(0, len_a):
-                if x[i] < a[j][0]:
-                    break
-                if x[i] > a[j][1]:
-                    continue
-                if a[j][0] <= x[i] <= a[j][1]:
-                    result[i] += 1
+            a_idx = bisect.bisect_right(a, x[i])
+            b_idx = bisect.bisect_left(b, x[i])
+            result[i] = a_idx - b_idx
         checked[x[i]] = i
     return result
 
 
-
-
-points = [random.randint(1, 100) for i in range(1, random.randint(1, 100))]
+points = [random.randint(1, 100) for i in range(1, 100)]
 # random.shuffle(points)
 num_segments = random.randint(1, 100)
-segments = [[random.randint(1, 100), random.randint(1, 100)] for i in range(1, num_segments)]
+start = [random.randint(1, num_segments) for i in range(1, num_segments)]
 # random.shuffle(start)
+end = [random.randint(1, num_segments) for i in range(1, num_segments)]
 # random.shuffle(end)
-for i in range(0, len(segments)):
-    if segments[i][0] > segments[i][1]:
-        segments[i][0], segments[i][1] = segments[i][1], segments[i][0]
+for i in range(0, len(start)):
+    if start[i] > end[i]:
+        start[i], end[i] = end[i], start[i]
 
 # start = [83, 42, 7, 55, 22, 61, 36, 25, 59, 12, 4, 27, 91, 26, 17, 35, 18, 52, 29, 45, 14, 39, 17, 18, 47, 46, 66, 54, 40, 4, 37, 44, 42, 3, 54, 21, 58, 44, 24, 12, 57, 31, 60, 6, 57, 21, 33, 11, 83, 62, 33, 4, 19, 25, 19, 52, 11, 19, 38, 34, 6, 45, 31, 33, 4, 16, 5, 5, 22, 38, 10, 49]
 # end = [86, 55, 49, 94, 29, 71, 69, 62, 85, 75, 76, 43, 96, 88, 42, 64, 35, 99, 59, 77, 32, 100, 37, 100, 87, 83, 86, 87, 93, 18, 87, 63, 52, 58, 75, 74, 89, 47, 75, 13, 86, 53, 65, 83, 60, 50, 48, 81, 96, 99, 41, 32, 49, 96, 98, 69, 82, 69, 59, 58, 33, 80, 66, 94, 64, 45, 46, 67, 54, 40, 24, 58]
@@ -99,10 +100,11 @@ for i in range(0, len(segments)):
 
 # segments, points = prepare_data()
 # print(segments)
-print(sorted(segments, key=lambda a: a[0]))
 
-print(' '.join([str(x) for x in naive_counter(segments, points)]))
-print(' '.join([str(x) for x in qsort_based_counter(segments, points)]))
+# start, end, points = prepare_data()
+
+print(' '.join([str(x) for x in naive_counter(start, end, points)]))
+print(' '.join([str(x) for x in qsort_based_counter(start, end, points)]))
 
 
 #import random
