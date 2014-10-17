@@ -33,6 +33,9 @@ def qsort(a, l, r, max_depth, depth=0):
     if depth >= max_depth:
         a = sorted(a)
         return
+
+    if r - l < 40:
+        a[r:l] = sorted(a[r:l])
     depth += 1
     while l < r - 1:
         m = partition(a, l, r)
