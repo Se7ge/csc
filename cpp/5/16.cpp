@@ -4,9 +4,7 @@
 #include <cmath>  // sqrt и fabs
 
 /*
-Копирование AST можно было реализовать, например, просто добавив виртуальный метод clone, похожий на метод evaluate. Но используя Visitor, через единственный метод transform мы можем реализовать не только копирование. В этой задаче вам необходимо реализовать сворачивание констант в дереве (constant folding). Например, у нас есть выражение (точнее, дерево, описывающее это выражение) abs(var * sqrt(32.0 - 16.0)), на выходе мы должны получить дерево для следующего выражения abs(var * 4.0), т. е. подвыражение sqrt(32.0 - 16.0) было вычислено.
-Для того, чтобы определить, что выражение (Expression) на самом деле является числом (Number), используйте оператор dynamic_cast.
-Все промежуточные узлы дерева, которые вы создали, нужно освободить.
+Измените методы evaluate во всех классах так, чтобы они принимали указатель на класс Scope. Используя Scope, реализуйте evaluate для класса Variable. Предполагается, что вы узнаете значение переменной по имени, используя метод variableValue.
 */
 
 using namespace std;
@@ -16,6 +14,12 @@ struct Number;
 struct BinaryOperation;
 struct FunctionCall;
 struct Variable;
+
+struct Scope
+{
+    virtual ~Scope() { }
+    virtual double variableValue(std::string const &name) const = 0;
+};
 
 struct Expression
 {
@@ -43,7 +47,9 @@ struct Number : Expression
     { return value_; }
 
     double evaluate() const
-    { return value_; }
+    {
+        return value_;
+    }
     
     Expression *transform(Transformer *tr) const {
 		return tr->transformNumber(this);
@@ -83,17 +89,19 @@ struct BinaryOperation : Expression
 
     double evaluate() const
     {
-        double left = left_->evaluate();
-        double right = right_->evaluate();
-        switch (op_)
+        double const l = left()->evaluate();
+        double const r = right()->evaluate();
+
+        switch (operation())
         {
-        case PLUS: return left + right;
-        case MINUS: return left - right;
-        case DIV: return left / right;
-        case MUL: return left * right;
+        case PLUS: return l + r;
+        case MINUS: return l - r;
+        case MUL: return l * r;
+        case DIV: return l / r;
         }
+
         assert(0);
-        return 0.0;
+        return 0.0l;
     }
     Expression *transform(Transformer *tr) const {
 		return tr->transformBinaryOperation(this);
@@ -124,16 +132,15 @@ struct FunctionCall : Expression
          return arg_;   
     }
     
-    double evaluate() const {
-        
-        if (name_ == "sqrt"){
-            return sqrt(arg_->evaluate());
-        }else if(name_ == "abs"){
-            return abs(arg_->evaluate());
-        }
-        
+    double evaluate() const
+    {
+        double const value = arg()->evaluate();
+        if (name() == "sqrt")
+            return sqrt(value);
+        if (name() == "abs")
+            return fabs(value);
         assert(0);
-        return 0.0;
+        return 0.0l;
     }
 
     ~FunctionCall()
@@ -157,8 +164,9 @@ struct Variable : Expression
 	}
     double evaluate() const
     {
-		return 0.0;
-	}
+        assert(0);
+        return 0.0;
+    }
     Expression *transform(Transformer *tr) const 
     {
 		return tr->transformVariable(this);
