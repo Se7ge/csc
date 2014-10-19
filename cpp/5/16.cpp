@@ -24,7 +24,7 @@ struct Scope
 struct Expression
 {
     virtual ~Expression() { }
-    virtual double evaluate() const = 0;
+    virtual double evaluate(Scope const * scope) const = 0;
     virtual Expression *transform(Transformer *tr) const = 0;
 };
 
@@ -46,7 +46,7 @@ struct Number : Expression
     double value() const
     { return value_; }
 
-    double evaluate() const
+    double evaluate(Scope const * scope) const
     {
         return value_;
     }
@@ -87,10 +87,10 @@ struct BinaryOperation : Expression
     int operation() const
     { return op_; }
 
-    double evaluate() const
+    double evaluate(Scope const * scope) const
     {
-        double const l = left()->evaluate();
-        double const r = right()->evaluate();
+        double const l = left()->evaluate(scope);
+        double const r = right()->evaluate(scope);
 
         switch (operation())
         {
@@ -132,9 +132,9 @@ struct FunctionCall : Expression
          return arg_;   
     }
     
-    double evaluate() const
+    double evaluate(Scope const * scope) const
     {
-        double const value = arg()->evaluate();
+        double const value = arg()->evaluate(scope);
         if (name() == "sqrt")
             return sqrt(value);
         if (name() == "abs")
@@ -162,10 +162,9 @@ struct Variable : Expression
     std::string const & name() const {
 		return name_;
 	}
-    double evaluate() const
+    double evaluate(Scope const * scope) const
     {
-        assert(0);
-        return 0.0;
+		return scope->variableValue(name());
     }
     Expression *transform(Transformer *tr) const 
     {
