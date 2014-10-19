@@ -3,7 +3,11 @@
 #include <cassert>
 #include <cmath>  // sqrt и fabs
 
-/*Реализуйте класс CopySyntaxTree, который, используя шаблон Visitor, выполняет копирование AST. Интерфейсы всех используемых классов приведены для удобства — не изменяйте их. Шаблон класса CopySyntaxTree находится в самом низу.*/
+/*
+Копирование AST можно было реализовать, например, просто добавив виртуальный метод clone, похожий на метод evaluate. Но используя Visitor, через единственный метод transform мы можем реализовать не только копирование. В этой задаче вам необходимо реализовать сворачивание констант в дереве (constant folding). Например, у нас есть выражение (точнее, дерево, описывающее это выражение) abs(var * sqrt(32.0 - 16.0)), на выходе мы должны получить дерево для следующего выражения abs(var * 4.0), т. е. подвыражение sqrt(32.0 - 16.0) было вычислено.
+Для того, чтобы определить, что выражение (Expression) на самом деле является числом (Number), используйте оператор dynamic_cast.
+Все промежуточные узлы дерева, которые вы создали, нужно освободить.
+*/
 
 using namespace std;
 
@@ -169,7 +173,6 @@ private:
     std::string const name_;
 };
 
-
 /**
  * реализуйте все необходимые методы класса
  * вы можете определять любые вспомогательные
@@ -194,55 +197,85 @@ struct CopySyntaxTree : Transformer
 
     Expression *transformVariable(Variable const *var)
     { 		
+		return new Variable(var->name());
+	}
+};
+
+/**
+ * реализуйте все необходимые методы
+ * если считаете нужным, то можете
+ * заводить любые вспомогательные
+ * методы
+ */
+struct FoldConstants : Transformer
+{
+    Expression *transformNumber(Number const *number)
+    { 
+		return new Number(number->value());
+	}
+
+    Expression *transformBinaryOperation(BinaryOperation const *binop)
+    {
+		Expression *left_new = binop->left()->transform(this);
+		Expression *right_new = binop->right()->transform(this);
+		BinaryOperation *binop_new = new BinaryOperation(left_new, binop->operation(), right_new);
+		
+        if (dynamic_cast<Number*>(left_new) && dynamic_cast<Number*>(right_new)){
+			double res = binop_new->evaluate();
+			delete binop_new;
+			//delete left_new;
+			//delete right_new;
+			return new Number(res);
+		} else {
+			return binop_new;
+		}
+	}
+
+    Expression *transformFunctionCall(FunctionCall const *fcall)
+    { 
+		Expression *arg = fcall->arg()->transform(this);
+		FunctionCall * fcall_new = new FunctionCall(fcall->name(), arg);
+		if(dynamic_cast<Number*>(arg)){
+			double res = fcall_new->evaluate();
+			//delete arg;
+			delete fcall_new;
+			return new Number(res);
+		} else {
+			return fcall_new;
+		}
+	}
+
+    Expression *transformVariable(Variable const *var)
+    { 
 		return new Variable(var->name());	
 	}
 };
 
 
 int main() {
-  
-  Expression * expression = new Number(10.0);
-  Transformer * transformer = new CopySyntaxTree();
-  Expression * new_expression = expression->transform(transformer);
+  struct Number *x = new Number(10);
+  struct Number *y = new Number(6);
 
-  delete expression;
-  delete transformer;
-  cout<<"number: "<<new_expression->evaluate()<<endl;
-  delete new_expression;
+  Expression *expression1 = new BinaryOperation(x,BinaryOperation::PLUS,y);
+  Transformer *transformer1 = new FoldConstants();
+  Expression *new_expression1 = expression1->transform(transformer1);
 
-  expression = new Variable("x");
-  transformer = new CopySyntaxTree();
-  new_expression = expression->transform(transformer);
+  cout<<"binary operation 1: "<<new_expression1->evaluate()<<endl;
 
-  delete expression;
-  delete transformer;
-  cout<<"new variable: "<<new_expression->evaluate()<<endl;
-  delete new_expression;
+  Expression *expression2 = new FunctionCall("sqrt", new_expression1);
+  Expression *new_expression2 = expression2->transform(transformer1);
 
-  enum { PLUS = '+', MINUS = '-', DIV = '/', MUL = '*' };
-  struct Number *x = new Number(2);
-  struct Number *y = new Number(3);
+  cout<<"function call 1: "<<new_expression2->evaluate()<<endl;
 
-  expression = new BinaryOperation(x,MUL,y);
-  transformer = new CopySyntaxTree();
-  new_expression = expression->transform(transformer);
+  Expression *expression3 = new FunctionCall("sqrt", new_expression2);
+  Expression *new_expression3 = expression3->transform(transformer1);
 
-  delete expression;
-  delete transformer;
-  cout<<"binary operation: "<<new_expression->evaluate()<<endl;
-  delete new_expression;
-  
-  
-  x = new Number(2);
-  expression = new FunctionCall("sqrt",x);
-  transformer = new CopySyntaxTree();
-  new_expression = expression->transform(transformer);
+  cout<<"function call 2: "<<new_expression3->evaluate()<<endl;
 
-  delete expression;
-  delete transformer;
-  cout<<"function call: "<<new_expression->evaluate()<<endl;
-  delete new_expression;
+  Expression *expression4 = new BinaryOperation(new_expression3,BinaryOperation::DIV,y);
+  Expression *new_expression4 = expression4->transform(transformer1);
 
+  cout<<"binary operation 2: "<<new_expression4->evaluate()<<endl;
   //system("pause");
   return 0;
 }
