@@ -45,57 +45,76 @@ struct SharedPtr
     // void reset(Expression *ptr = 0)
     // Expression& operator*() const
     // Expression* operator->() const
-    
+
     explicit SharedPtr(Expression *ptr = 0){
 		ptr_ = ptr;
-        counter_ = new int;
-        if (ptr) {
+		counter_ = new int;
+        *counter_ = 0;
+        if (ptr_) {
             *counter_ = 1;
-        } else {
-            *counter_ = 0;
         }
 	}
-	Expression* get() const {
-	    return ptr_;
-	}
 	SharedPtr(const SharedPtr & obj) {
-        ptr_ = obj.ptr_;
-        counter_ = obj.counter_;
-        if (obj.ptr_){
-			++(*counter_);
+        if (this != &obj) {
+            ptr_ = obj.ptr_;
+            counter_ = obj.counter_;
+            if (ptr_){
+                ++(*counter_);
+            }
 		}
 	}
 	void reset(Expression *ptr = 0){
         if (ptr_ != ptr){
-            if (ptr && *counter_ && !--(*counter_)){
-//                delete counter_;
-//                delete ptr_;
+            if (*counter_ && !--(*counter_)){
+                delete counter_;
+                if (ptr_) {
+                    ptr_ = NULL;
+                    delete ptr_;
+                }
             }
             ptr_ = ptr;
+			counter_ = new int;
             if (ptr) {
-                counter_ = new int;
                 *counter_ = 1;
             } else {
-                *counter_ = 0;
-            }
+				*counter_ = 0;
+			}
         }
 	}
+    Expression* get() const {
+        return ptr_;
+    }
+//	SharedPtr& operator=(const SharedPtr & obj) {
+//		if (this != &obj) {
+//            if (*counter_ && !--(*counter_)){
+//                delete counter_;
+//                ptr_ = NULL;
+//                delete ptr_;
+//            }
+//			ptr_ = obj.ptr_;
+//			counter_ = new int;
+//            counter_ = obj.counter_;
+//            if (ptr_) {
+//                ++(*counter_);
+//            }
+//		}
+//		return *this;
+//	}
 	SharedPtr& operator=(const SharedPtr & obj) {
 		if (this != &obj) {
-//			if (obj.ptr_ && *counter_ && !--(*counter_)){
-//				delete ptr_;
-//				delete counter_;
-//			}
-            if (obj.ptr_ && ptr_!=obj.ptr_ && *counter_){
-//                --(*counter_);
-//                ++(*(obj.counter_));
+            if (*counter_ && ptr_){
+                --(*counter_);
             }
-            ptr_ = obj.ptr_;
-            counter_ = new int;
-            if (obj.ptr_) {
+            if (!(*counter_)){
+                ptr_ = obj.ptr_;
+                counter_ = new int;
                 counter_ = obj.counter_;
-            } else {
-                *counter_ = 0;
+                if (ptr_) {
+                    ++(*counter_);
+                }
+            }
+            if (*obj.counter_ && obj.ptr_){
+                ++(*obj.counter_);
             }
 		}
 		return *this;
@@ -110,22 +129,89 @@ struct SharedPtr
 		return *counter_;
 	}
 	~SharedPtr(){
-        if (*counter_){
-            if (!--(*counter_)){
-                delete counter_;
-                if (ptr_) {
-                    delete ptr_;
-                }
-            }
+        if (*counter_ && !--(*counter_)) {
+            delete counter_;
+        }
+        if (!(*counter_)){
+            ptr_ = NULL;
+            delete ptr_;
         }
 	}
 
 private:
-
     Expression *ptr_;
-    int * counter_;
+    int *counter_;
 };
+/*
+int main(){
+    Number *n32 = new Number(32.0);
+    Number *n16 = new Number(16.0);
+    Number *n42 = new Number(42.0);
+    std::cout<<"------------------"<<std::endl;
+    std::cout<<"SharedPtr p1(n32)"<<std::endl;
+    SharedPtr p1(n32);
+    std::cout<<"p1 = "<<p1.count()<<std::endl;
+    std::cout<<"------------------"<<std::endl;
 
+    std::cout<<"SharedPtr p2 = p1"<<std::endl;
+    SharedPtr p2 = p1;
+    std::cout<<"p2 = "<<p2.count()<<std::endl;
+    std::cout<<"p1 = "<<p1.count()<<std::endl;
+    std::cout<<"------------------"<<std::endl;
+
+    std::cout<<"SharedPtr p3(p1)"<<std::endl;
+    SharedPtr p3(p1);
+    std::cout<<"p1 = "<<p1.count()<<std::endl;
+    std::cout<<"p2 = "<<p2.count()<<std::endl;
+    std::cout<<"p3 = "<<p3.count()<<std::endl;
+    std::cout<<"------------------"<<std::endl;
+
+    std::cout<<"p3.reset(n16)"<<std::endl;
+    p3.reset(n16);
+    std::cout<<"p3 = "<<p3.count()<<std::endl;
+    std::cout<<"p2 = "<<p2.count()<<std::endl;
+    std::cout<<"p1 = "<<p1.count()<<std::endl;
+    std::cout<<"------------------"<<std::endl;
+
+    std::cout<<"p3.reset(0)"<<std::endl;
+    p3.reset(0);
+    std::cout<<"p3 = "<<p3.count()<<std::endl;
+    std::cout<<"p2 = "<<p2.count()<<std::endl;
+    std::cout<<"p1 = "<<p1.count()<<std::endl;
+    std::cout<<"------------------"<<std::endl;
+
+
+    std::cout<<"p1 = p1"<<std::endl;
+    p1 = p1;
+    std::cout<<"p3 = "<<p3.count()<<std::endl;
+    std::cout<<"p2 = "<<p2.count()<<std::endl;
+    std::cout<<"p1 = "<<p1.count()<<std::endl;
+    std::cout<<"------------------"<<std::endl;
+
+
+    std::cout<<"p3.~SharedPtr()"<<std::endl;
+    p3.~SharedPtr();
+    std::cout<<"p2 = "<<p2.count()<<std::endl;
+    std::cout<<"p1 = "<<p1.count()<<std::endl;
+    std::cout<<"------------------"<<std::endl;
+
+    std::cout<<"p1.reset(n42)"<<std::endl;
+    p1.reset(n42);
+    std::cout<<"p1 = "<<p1.count()<<std::endl;
+    std::cout<<"p2 = "<<p2.count()<<std::endl;
+    std::cout<<"------------------"<<std::endl;
+
+    std::cout<<"p1.~SharedPtr()"<<std::endl;
+    p1.~SharedPtr();
+    std::cout<<"p2 = "<<p2.count()<<std::endl;
+    std::cout<<"------------------"<<std::endl;
+
+    std::cout<<"p2.~SharedPtr()"<<std::endl;
+    p2.~SharedPtr();
+
+    return 0;
+}
+*/
 int main(){
 
     Number *n16 = new Number(16.0);
@@ -246,74 +332,74 @@ int main(){
 
     return 0;
 }
+/*
+int main(){
+    Number *n32 = new Number(32.0);
+    Number *n16 = new Number(16.0);
+    Number *n42 = new Number(42.0);
+    std::cout<<"------------------"<<std::endl;
+    std::cout<<"SharedPtr p1(n32)"<<std::endl;
+    SharedPtr p1(n32);
+    std::cout<<"p1 = "<<p1.count()<<std::endl;
+    std::cout<<"------------------"<<std::endl;
 
-//int main(){
-//    Number *n32 = new Number(32.0);
-//    Number *n16 = new Number(16.0);
-//    Number *n42 = new Number(42.0);
-//    std::cout<<"------------------"<<std::endl;
-//    std::cout<<"SharedPtr p1(n32)"<<std::endl;
-//    SharedPtr p1(n32);
-//    std::cout<<"p1 = "<<p1.count()<<std::endl;
-//    std::cout<<"------------------"<<std::endl;
-//
-//    std::cout<<"SharedPtr p2 = p1"<<std::endl;
-//    SharedPtr p2 = p1;
-//    std::cout<<"p2 = "<<p2.count()<<std::endl;
-//    std::cout<<"p1 = "<<p1.count()<<std::endl;
-//    std::cout<<"------------------"<<std::endl;
-//
-//    std::cout<<"SharedPtr p3(p1)"<<std::endl;
-//    SharedPtr p3(p1);
-//    std::cout<<"p1 = "<<p1.count()<<std::endl;
-//    std::cout<<"p2 = "<<p2.count()<<std::endl;
-//    std::cout<<"p3 = "<<p3.count()<<std::endl;
-//    std::cout<<"------------------"<<std::endl;
-//
-//    std::cout<<"p3.reset(n16)"<<std::endl;
-//    p3.reset(n16);
-//    std::cout<<"p3 = "<<p3.count()<<std::endl;
-//    std::cout<<"p2 = "<<p2.count()<<std::endl;
-//    std::cout<<"p1 = "<<p1.count()<<std::endl;
-//    std::cout<<"------------------"<<std::endl;
-//
-//    std::cout<<"p3.reset(0)"<<std::endl;
-//    p3.reset(0);
-//    std::cout<<"p3 = "<<p3.count()<<std::endl;
-//    std::cout<<"p2 = "<<p2.count()<<std::endl;
-//    std::cout<<"p1 = "<<p1.count()<<std::endl;
-//    std::cout<<"------------------"<<std::endl;
-//
-//
-//    std::cout<<"p1 = p1"<<std::endl;
-//    p1 = p1;
-//    std::cout<<"p3 = "<<p3.count()<<std::endl;
-//    std::cout<<"p2 = "<<p2.count()<<std::endl;
-//    std::cout<<"p1 = "<<p1.count()<<std::endl;
-//    std::cout<<"------------------"<<std::endl;
-//
-//
-//    std::cout<<"p3.~SharedPtr()"<<std::endl;
-//    p3.~SharedPtr();
-//    std::cout<<"p2 = "<<p2.count()<<std::endl;
-//    std::cout<<"p1 = "<<p1.count()<<std::endl;
-//    std::cout<<"------------------"<<std::endl;
-//
-//    std::cout<<"p1.reset(n42)"<<std::endl;
-//    p1.reset(n42);
-//    std::cout<<"p1 = "<<p1.count()<<std::endl;
-//    std::cout<<"p2 = "<<p2.count()<<std::endl;
-//    std::cout<<"------------------"<<std::endl;
-//
-//    std::cout<<"p1.~SharedPtr()"<<std::endl;
-//    p1.~SharedPtr();
-//    std::cout<<"p2 = "<<p2.count()<<std::endl;
-//    std::cout<<"------------------"<<std::endl;
-//
-//    std::cout<<"p2.~SharedPtr()"<<std::endl;
-//    p2.~SharedPtr();
-//
-//
+    std::cout<<"SharedPtr p2 = p1"<<std::endl;
+    SharedPtr p2 = p1;
+    std::cout<<"p2 = "<<p2.count()<<std::endl;
+    std::cout<<"p1 = "<<p1.count()<<std::endl;
+    std::cout<<"------------------"<<std::endl;
+
+    std::cout<<"SharedPtr p3(p1)"<<std::endl;
+    SharedPtr p3(p1);
+    std::cout<<"p1 = "<<p1.count()<<std::endl;
+    std::cout<<"p2 = "<<p2.count()<<std::endl;
+    std::cout<<"p3 = "<<p3.count()<<std::endl;
+    std::cout<<"------------------"<<std::endl;
+
+    std::cout<<"p3.reset(n16)"<<std::endl;
+    p3.reset(n16);
+    std::cout<<"p3 = "<<p3.count()<<std::endl;
+    std::cout<<"p2 = "<<p2.count()<<std::endl;
+    std::cout<<"p1 = "<<p1.count()<<std::endl;
+    std::cout<<"------------------"<<std::endl;
+
+    std::cout<<"p3.reset(0)"<<std::endl;
+    p3.reset(0);
+    std::cout<<"p3 = "<<p3.count()<<std::endl;
+    std::cout<<"p2 = "<<p2.count()<<std::endl;
+    std::cout<<"p1 = "<<p1.count()<<std::endl;
+    std::cout<<"------------------"<<std::endl;
+
+
+    std::cout<<"p1 = p1"<<std::endl;
+    p1 = p1;
+    std::cout<<"p3 = "<<p3.count()<<std::endl;
+    std::cout<<"p2 = "<<p2.count()<<std::endl;
+    std::cout<<"p1 = "<<p1.count()<<std::endl;
+    std::cout<<"------------------"<<std::endl;
+
+
+    std::cout<<"p3.~SharedPtr()"<<std::endl;
+    p3.~SharedPtr();
+    std::cout<<"p2 = "<<p2.count()<<std::endl;
+    std::cout<<"p1 = "<<p1.count()<<std::endl;
+    std::cout<<"------------------"<<std::endl;
+
+    std::cout<<"p1.reset(n42)"<<std::endl;
+    p1.reset(n42);
+    std::cout<<"p1 = "<<p1.count()<<std::endl;
+    std::cout<<"p2 = "<<p2.count()<<std::endl;
+    std::cout<<"------------------"<<std::endl;
+
+    std::cout<<"p1.~SharedPtr()"<<std::endl;
+    p1.~SharedPtr();
+    std::cout<<"p2 = "<<p2.count()<<std::endl;
+    std::cout<<"------------------"<<std::endl;
+
+    std::cout<<"p2.~SharedPtr()"<<std::endl;
+    p2.~SharedPtr();
+
+
 ////    std::cout<<"------------------"<<std::endl;
 ////    std::cout<<"SharedPtr p1(n32)"<<std::endl;
 ////    SharedPtr p1(n32);
@@ -376,4 +462,5 @@ int main(){
 ////    p2.~SharedPtr();
 ////    std::cout<<"p4 = "<<p4.count()<<std::endl;
 ////    std::cout<<"------------------"<<std::endl;
-//}
+}
+*/
