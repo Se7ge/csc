@@ -53,48 +53,46 @@ struct SharedPtr
         if (ptr_) {
             counter_ = new int(1);
         } else {
-            counter_ = NULL;
+            counter_ = 0;
         }
 	}
 	SharedPtr(const SharedPtr & obj) {
-        if (this != &obj) {
+//        if (this != &obj) {
             ptr_ = obj.ptr_;
             counter_ = obj.counter_;
             if (ptr_){
                 ++(*counter_);
             }
-		}
+//		}
 	}
     void decrement_counter(){
-        if (counter_ && *counter_ && !--(*counter_)) {
+        if (counter_ && ptr_ /*&& *counter_*/ && !--(*counter_)) {
             delete ptr_;
             delete counter_;
-            ptr_ = NULL;
-            counter_ = NULL;
+//            ptr_ = 0;
+            counter_ = 0;
         }
     }
 	void reset(Expression *ptr = 0){
         if (ptr_ != ptr){
+            decrement_counter();
+            ptr_ = ptr;
             if (ptr) {
-                decrement_counter();
                 counter_ = new int(0);
-                ptr_ = ptr;
                 if (ptr_) {
                     ++(*counter_);
                 }
-            } else {
-                ptr_ = ptr;
-                counter_ = NULL;
             }
         }
 	}
 	SharedPtr& operator=(const SharedPtr & obj) {
-        if (this == &obj) return *this;
-        decrement_counter();
-        ptr_ = obj.ptr_;
-        counter_ = obj.counter_;
-        if (obj.ptr_) {
-            ++(*counter_);
+        if (this != &obj){
+            decrement_counter();
+            ptr_ = obj.ptr_;
+            counter_ = obj.counter_;
+            if (obj.ptr_) {
+                ++(*counter_);
+            }
         }
 		return *this;
 	}
