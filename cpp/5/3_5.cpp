@@ -50,9 +50,10 @@ struct SharedPtr
 
     explicit SharedPtr(Expression *ptr = 0){
 		ptr_ = ptr;
-		counter_ = new int(0);
         if (ptr_) {
-            *counter_ = 1;
+            counter_ = new int(1);
+        } else {
+            counter_ = NULL;
         }
 	}
 	SharedPtr(const SharedPtr & obj) {
@@ -68,21 +69,23 @@ struct SharedPtr
         if (counter_ && *counter_ && !--(*counter_)) {
             delete ptr_;
             delete counter_;
+            ptr_ = NULL;
+            counter_ = NULL;
         }
     }
 	void reset(Expression *ptr = 0){
         if (ptr_ != ptr){
-//            if (ptr) {
+            if (ptr) {
                 decrement_counter();
                 counter_ = new int(0);
                 ptr_ = ptr;
                 if (ptr_) {
                     ++(*counter_);
                 }
-//            } else {
-//                ptr_ = ptr;
-//                counter_ = new int(0);
-//            }
+            } else {
+                ptr_ = ptr;
+                counter_ = NULL;
+            }
         }
 	}
 	SharedPtr& operator=(const SharedPtr & obj) {
