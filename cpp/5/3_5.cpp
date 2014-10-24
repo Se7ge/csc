@@ -56,44 +56,42 @@ struct SharedPtr
         }
 	}
 	SharedPtr(const SharedPtr & obj) {
-//        if (this != &obj) {
+        if (this != &obj) {
             ptr_ = obj.ptr_;
             counter_ = obj.counter_;
             if (ptr_){
                 ++(*counter_);
             }
-//		}
+		}
 	}
+    void decrement_counter(){
+        if (counter_ && *counter_ && !--(*counter_)) {
+            delete ptr_;
+            delete counter_;
+        }
+    }
 	void reset(Expression *ptr = 0){
         if (ptr_ != ptr){
-            if (*counter_ && !--(*counter_)){
-                delete counter_;
+//            if (ptr) {
+                decrement_counter();
+                counter_ = new int(0);
+                ptr_ = ptr;
                 if (ptr_) {
-                    ptr_ = NULL;
-                    delete ptr_;
+                    ++(*counter_);
                 }
-            }
-            counter_ = new int(0);
-            ptr_ = ptr;
-            if (ptr_) {
-                ++(*counter_);
-            }
+//            } else {
+//                ptr_ = ptr;
+//                counter_ = new int(0);
+//            }
         }
 	}
 	SharedPtr& operator=(const SharedPtr & obj) {
         if (this == &obj) return *this;
-
-        if (*counter_){
-            if(!--(*counter_)){
-                delete counter_;
-                delete ptr_;
-            }
-        }
+        decrement_counter();
         ptr_ = obj.ptr_;
-        counter_ = new int(0);
+        counter_ = obj.counter_;
         if (obj.ptr_) {
-            ++(*obj.counter_);
-            counter_ = obj.counter_;
+            ++(*counter_);
         }
 		return *this;
 	}
@@ -107,16 +105,11 @@ struct SharedPtr
         return ptr_;
     }
 	int count() const{
-		return *counter_;
+        if (counter_) return *counter_;
+        return 0;
 	}
 	~SharedPtr(){
-        if (*counter_ && !--(*counter_)) {
-            delete counter_;
-        }
-        if (!(*counter_) && ptr_){
-            ptr_ = NULL;
-            delete ptr_;
-        }
+        decrement_counter();
 	}
 
 private:
