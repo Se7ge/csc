@@ -73,14 +73,14 @@ class Array
         }
     }
     Array& operator=(const Array & obj){
-        if (this != &obj) {
+        //if (this != &obj) {
             mem_free();
             size_ = obj.size_;
             data_ = (T*) new char[size_ * sizeof(T)];
             for (size_t i = 0; i != size_; ++i) {
                 new (data_ + i) T(obj.data_[i]);
             }
-        }
+        //}
         return *this;
     }
 
@@ -106,6 +106,7 @@ class Array
             data_[i].~T();
         }
         delete [] data_;
+        data_ = 0;
     }
 };
 
