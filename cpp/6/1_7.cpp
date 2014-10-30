@@ -74,12 +74,7 @@ class Array
     }
     Array& operator=(const Array & obj){
         if (this != &obj) {
-            //if (size_) {
-                for (size_t i = 0; i != size_; ++i) {
-                    data_[i].~T();
-                }
-                delete [] data_;
-            //}
+            mem_free();
             size_ = obj.size_;
             data_ = (T*) new char[size_ * sizeof(T)];
             for (size_t i = 0; i != size_; ++i) {
@@ -99,17 +94,19 @@ class Array
         return data_[i];
     }
     ~Array() {
-        //if (size_) {
-            for (size_t i = 0; i != size_; ++i) {
-                data_[i].~T();
-            }
-            delete [] data_;
-        //}
+        mem_free();
     }
 
     private :
         size_t size_ ;
         T * data_ ;
+
+    void mem_free(){
+        for (size_t i = 0; i != size_; ++i) {
+            data_[i].~T();
+        }
+        delete [] data_;
+    }
 };
 
 int main() {
@@ -118,14 +115,19 @@ int main() {
     Array<float> *arr2 = new Array<float>(5,8.88f);
     Array<float> arr3 = Array<float>(*arr2);
     Array<float> arr4;
+    Array<string> *arr5 = new Array<string>(10,"42");
     arr4 = arr3;
     //my_arr1->~Array();
     //my_arr2->~Array();
 
     for (size_t i = 0; i < arr0->size(); i++)
         cout << "Value of " << i << " element is " << (*arr1)[i] << endl;
+    cout<<endl;
     for (size_t i = 0; i < arr1->size(); i++)
         cout << "Value of " << i << " element is " << (*arr1)[i] << endl;
+    cout<<endl;
+    for (size_t i = 0; i < arr5->size(); i++)
+        cout << "Value of " << i << " element is " << (*arr5)[i] << endl;
 
     cout<<endl;
 
