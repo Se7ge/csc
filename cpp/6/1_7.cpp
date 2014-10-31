@@ -110,6 +110,14 @@ class Array
     }
 };
 
+struct NonCopyable {
+    // copy and assignment not allowed
+    NonCopyable(const int value ): value_(value) {};
+    NonCopyable& operator=(const NonCopyable & obj) = delete;
+private:
+    int value_;
+};
+
 int main() {
     Array<int> *arr0 = new Array<int>();
     Array<int> *arr1 = new Array<int>(10,7);
@@ -117,6 +125,7 @@ int main() {
     Array<float> arr3 = Array<float>(*arr2);
     Array<float> arr4;
     Array<string> *arr5 = new Array<string>(10,"42");
+    Array<NonCopyable> *arr6 = new Array<NonCopyable>(5, 10);
     arr4 = arr3;
     //my_arr1->~Array();
     //my_arr2->~Array();
@@ -134,6 +143,7 @@ int main() {
 
     for (size_t i = 0; i < arr4.size(); i++)
         cout << "Value of " << i << " element is " << arr4[i] << endl;
+
 
     //system("pause");
     return 0;
