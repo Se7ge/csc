@@ -54,7 +54,7 @@ class Array
     //   две версии оператора доступа по индексу.
 
     public:
-    explicit Array(size_t size, const T& value = T()) {
+    Array(size_t size, const T& value = T()) {
         size_ = size;
         data_ = (T*) new char[size_ * sizeof(T)];
         for (size_t i = 0; i != size_; ++i){
@@ -67,19 +67,19 @@ class Array
         data_ = 0;
     }
     Array(const Array & obj) {
-        size_ = obj.size_;
+        size_ = obj.size();
         data_ = (T*) new char[size_ * sizeof(T)];
         for (size_t i = 0; i != size_; ++i) {
-            new (data_ + i) T(obj.data_[i]);
+            new (data_ + i) T(obj[i]);
         }
     }
     Array& operator=(const Array & obj){
         if (this != &obj) {
             mem_free();
-            size_ = obj.size_;
+            size_ = obj.size();
             data_ = (T*) new char[size_ * sizeof(T)];
             for (size_t i = 0; i != size_; ++i) {
-                new (data_ + i) T(obj.data_[i]);
+                new (data_ + i) T(obj[i]);
             }
         }
         return *this;
@@ -89,25 +89,28 @@ class Array
         return size_;
     }
     T& operator[](size_t i) {
-        return data_[i];
+        //return data_[i]; равносильно:
+        return *(data_ + i);
     }
     const T& operator[](size_t i) const {
-        return data_[i];
+        //return data_[i]; равносильно:
+        return *(data_ + i);
     }
     ~Array() {
         mem_free();
     }
 
-    private :
-        size_t size_ ;
-        T * data_ ;
-
     void mem_free(){
         for (size_t i = 0; i != size_; ++i) {
             data_[i].~T();
         }
-        delete [] data_;
+        // собака порылась здесь!!
+        delete [] (char *) data_;
     }
+
+    private :
+        size_t size_ ;
+        T * data_ ;
 };
 
 struct NonCopyable {
